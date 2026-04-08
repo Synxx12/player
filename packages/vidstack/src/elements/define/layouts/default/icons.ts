@@ -11,6 +11,7 @@ import ccOn from 'media-icons/dist/icons/closed-captions-on.js';
 import ccOff from 'media-icons/dist/icons/closed-captions.js';
 import menuCaptions from 'media-icons/dist/icons/closed-captions.js';
 import download from 'media-icons/dist/icons/download.js';
+import episodes from 'media-icons/dist/icons/episodes.js';
 import menuOpacityUp from 'media-icons/dist/icons/eye.js';
 import fastBackward from 'media-icons/dist/icons/fast-backward.js';
 import fastForward from 'media-icons/dist/icons/fast-forward.js';
@@ -47,8 +48,8 @@ export const icons = {
   'pip-exit': pipExit,
   'fs-enter': fsEnter,
   'fs-exit': fsExit,
-  'seek-forward': seekForward,
-  'seek-backward': seekBackward,
+  'seek-forward': fastForward,
+  'seek-backward': fastBackward,
   'menu-chapters': chapters,
   'menu-settings': settings,
   'menu-arrow-left': menuArrowLeft,
@@ -81,4 +82,5 @@ export const icons = {
   'kb-cc-off': ccOff,
   'kb-seek-forward': fastForward,
   'kb-seek-backward': fastBackward,
+  'menu-episodes': episodes,
 };

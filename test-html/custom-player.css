@@ -1,0 +1,50 @@
+/*
+ * ============================================================
+ * Notflix Custom Player Theme — Super Modern Override
+ * ============================================================
+ */
+
+/* --- Brand & Theme Variables --- */
+media-player {
+  --video-brand: #e50914;
+  --video-border-radius: 12px;
+  --video-border: none;
+  --video-bg: #000;
+  --video-controls-color: #f5f5f5;
+  --media-font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  /* Time slider: brand red */
+  --media-slider-track-bg: rgba(255, 255, 255, 0.25);
+  --media-slider-track-fill-bg: var(--video-brand);
+  --media-slider-thumb-bg: #fff;
+  --media-slider-thumb-border: 2px solid rgba(255, 255, 255, 0.5);
+
+  /* Menu */
+  --media-menu-border-radius: 12px;
+
+  /* Button hover */
+  --media-button-hover-bg: rgba(255, 255, 255, 0.1);
+  --media-button-hover-transform: scale(1.06);
+  --media-button-border-radius: 50%;
+
+  /* Focus Ring */
+  --video-focus-ring-color: rgba(229, 9, 20, 0.5);
+}
+
+/* --- Menu sliders (speed, quality): neutral white, NOT brand red --- */
+.vds-menu-items .vds-slider {
+  --media-slider-track-fill-bg: rgba(255, 255, 255, 0.9);
+  --media-slider-thumb-bg: #ffffff;
+  --media-slider-thumb-border: 2px solid rgba(255, 255, 255, 0.6);
+  --media-slider-track-bg: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Quality/Speed steps: modern dot pills, neutral --- */
+.vds-menu-items .vds-slider-step {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* --- Fullscreen tweaks --- */
+:where([data-fullscreen] media-player) {
+  --video-border-radius: 0;
+}

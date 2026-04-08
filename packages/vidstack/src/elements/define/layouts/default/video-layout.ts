@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import { computed } from 'maverick.js';
+import { computed, effect, signal } from 'maverick.js';
 
 import { useDefaultLayoutContext } from '../../../../components/layouts/default/context';
 import { useMediaState } from '../../../../core/api/media-context';
@@ -9,10 +9,12 @@ import {
   DefaultAirPlayButton,
   DefaultCaptionButton,
   DefaultDownloadButton,
+  DefaultEpisodeButton,
   DefaultFullscreenButton,
   DefaultGoogleCastButton,
   DefaultPIPButton,
   DefaultPlayButton,
+  DefaultSeekButton,
 } from './ui/buttons';
 import { DefaultCaptions } from './ui/captions';
 import { DefaultControlsSpacer } from './ui/controls';
@@ -24,6 +26,23 @@ import { DefaultTimeInfo } from './ui/time';
 import { DefaultTitle } from './ui/title';
 
 export function DefaultVideoLayoutLarge() {
+  const { episodes, smallWhen: smWhen } = useDefaultLayoutContext(),
+    { fullscreen } = useMediaState(),
+    $episodesOpen = signal(false);
+
+  effect(() => {
+    if (!fullscreen()) $episodesOpen.set(false);
+  });
+
+  function onEpisodesToggle() {
+    if ((!fullscreen() && !smWhen()) || !episodes()?.length) return;
+    $episodesOpen.set(!$episodesOpen());
+  }
+
+  function onEpisodesClose() {
+    $episodesOpen.set(false);
+  }
+
   return [
     DefaultAnnouncer(),
     DefaultVideoGestures(),
@@ -32,11 +51,9 @@ export function DefaultVideoLayoutLarge() {
     DefaultCaptions(),
     html`<div class="vds-scrim"></div>`,
     html`
-      <media-controls class="vds-controls">
+      <media-controls class="vds-controls" @vds-episodes-open=${onEpisodesToggle}>
         ${[
           DefaultControlsGroupTop(),
-          DefaultControlsSpacer(),
-          html`<media-controls-group class="vds-controls-group"></media-controls-group>`,
           DefaultControlsSpacer(),
           html`
             <media-controls-group class="vds-controls-group">
@@ -44,16 +61,22 @@ export function DefaultVideoLayoutLarge() {
             </media-controls-group>
           `,
           html`
-            <media-controls-group class="vds-controls-group">
+            <media-controls-group class="vds-controls-group vds-controls-group-bottom">
               ${[
+                DefaultSeekButton({ backward: true, tooltip: 'top' }),
                 DefaultPlayButton({ tooltip: 'top start' }),
+                DefaultSeekButton({ backward: false, tooltip: 'top' }),
                 DefaultVolumePopup({ orientation: 'horizontal', tooltip: 'top' }),
                 DefaultTimeInfo(),
                 DefaultTitle(),
+                DefaultControlsSpacer(),
+                $signal(() =>
+                  (fullscreen() || smWhen()) && episodes()?.length
+                    ? DefaultEpisodeButton({ tooltip: 'top' })
+                    : null,
+                ),
                 DefaultCaptionButton({ tooltip: 'top' }),
                 DefaultBottomMenuGroup(),
-                DefaultAirPlayButton({ tooltip: 'top' }),
-                DefaultGoogleCastButton({ tooltip: 'top' }),
                 DefaultDownloadButton(),
                 DefaultPIPButton(),
                 DefaultFullscreenButton({ tooltip: 'top end' }),
@@ -63,6 +86,7 @@ export function DefaultVideoLayoutLarge() {
         ]}
       </media-controls>
     `,
+    DefaultEpisodesSidebar($episodesOpen, onEpisodesClose),
   ];
 }
 
@@ -85,6 +109,23 @@ function DefaultControlsGroupTop() {
 }
 
 export function DefaultVideoLayoutSmall() {
+  const { episodes, smallWhen: smWhen } = useDefaultLayoutContext(),
+    { fullscreen } = useMediaState(),
+    $episodesOpen = signal(false);
+
+  effect(() => {
+    if (!fullscreen()) $episodesOpen.set(false);
+  });
+
+  function onEpisodesToggle() {
+    if ((!fullscreen() && !smWhen()) || !episodes()?.length) return;
+    $episodesOpen.set(!$episodesOpen());
+  }
+
+  function onEpisodesClose() {
+    $episodesOpen.set(false);
+  }
+
   return [
     DefaultAnnouncer(),
     DefaultVideoGestures(),
@@ -93,11 +134,9 @@ export function DefaultVideoLayoutSmall() {
     DefaultKeyboardDisplay(),
     html`<div class="vds-scrim"></div>`,
     html`
-      <media-controls class="vds-controls">
+      <media-controls class="vds-controls" @vds-episodes-open=${onEpisodesToggle}>
         <media-controls-group class="vds-controls-group">
           ${[
-            DefaultAirPlayButton({ tooltip: 'top start' }),
-            DefaultGoogleCastButton({ tooltip: 'bottom start' }),
             DefaultControlsSpacer(),
             DefaultCaptionButton({ tooltip: 'bottom' }),
             DefaultDownloadButton(),
@@ -108,26 +147,29 @@ export function DefaultVideoLayoutSmall() {
 
         ${DefaultControlsSpacer()}
 
-        <media-controls-group class="vds-controls-group" style="pointer-events: none;">
-          ${[
-            DefaultControlsSpacer(),
-            DefaultPlayButton({ tooltip: 'top' }),
-            DefaultControlsSpacer(),
-          ]}
-        </media-controls-group>
-
-        ${DefaultControlsSpacer()}
-
-        <media-controls-group class="vds-controls-group">
-          ${[DefaultTimeInfo(), DefaultTitle(), DefaultFullscreenButton({ tooltip: 'top end' })]}
-        </media-controls-group>
-
         <media-controls-group class="vds-controls-group">
           ${DefaultTimeSlider()}
+        </media-controls-group>
+
+        <media-controls-group class="vds-controls-group vds-controls-group-bottom">
+          ${[
+            DefaultSeekButton({ backward: true, tooltip: 'top' }),
+            DefaultPlayButton({ tooltip: 'top' }),
+            DefaultSeekButton({ backward: false, tooltip: 'top' }),
+            DefaultTimeInfo(),
+            DefaultControlsSpacer(),
+            $signal(() =>
+              (fullscreen() || smWhen()) && episodes()?.length
+                ? DefaultEpisodeButton({ tooltip: 'top' })
+                : null,
+            ),
+            DefaultFullscreenButton({ tooltip: 'top end' }),
+          ]}
         </media-controls-group>
       </media-controls>
     `,
     StartDuration(),
+    DefaultEpisodesSidebar($episodesOpen, onEpisodesClose),
   ];
 }
 
@@ -159,6 +201,117 @@ export function DefaultBufferingIndicator() {
       <media-spinner class="vds-buffering-spinner"></media-spinner>
     </div>
   `;
+}
+
+function DefaultEpisodesSidebar($open: () => boolean, onClose: () => void) {
+  const { episodes, episodesTitle, smallWhen: smWhen } = useDefaultLayoutContext(),
+    { fullscreen } = useMediaState();
+
+  return $signal(() => {
+    const list = episodes() ?? [];
+    if ((!fullscreen() && !smWhen()) || !list.length) return null;
+
+    return html`
+      <div
+        class="vds-episodes-backdrop"
+        data-open=${$open() ? 'true' : 'false'}
+        @pointerup=${(event: PointerEvent) => {
+          if (event.target === event.currentTarget) onClose();
+        }}
+      >
+        <aside
+          class="vds-episodes-panel"
+          data-open=${$open() ? 'true' : 'false'}
+          @keydown=${(event: KeyboardEvent) => {
+            if (event.key === 'Escape') onClose();
+          }}
+        >
+          <header class="vds-episodes-panel-header">
+            <h3 class="vds-episodes-panel-title">${episodesTitle()}</h3>
+            <button
+              type="button"
+              class="vds-episodes-close-btn"
+              aria-label="Close episodes"
+              @pointerup=${(event: Event) => {
+                event.stopPropagation();
+                onClose();
+              }}
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          </header>
+          <div class="vds-episodes-list" role="list">
+            ${list.map((episode, index) => {
+              const episodeName =
+                  episode.episodeTitle || `Episode ${episode.episodeNumber ?? index + 1}`,
+                runtimeText = Number.isFinite(episode.runtime) ? `${episode.runtime}m` : null,
+                seasonEpLabel =
+                  episode.seasonNumber != null && episode.episodeNumber != null
+                    ? `S${String(episode.seasonNumber).padStart(2, '0')} · E${String(
+                        episode.episodeNumber,
+                      ).padStart(2, '0')}`
+                    : episodeName;
+
+              const onEpisodeSelect = (event: Event) => {
+                event.stopPropagation();
+                (event.currentTarget as HTMLElement | null)?.dispatchEvent(
+                  new CustomEvent('vds-episode-select', {
+                    bubbles: true,
+                    composed: true,
+                    detail: { episode, index },
+                  }),
+                );
+                onClose();
+              };
+              return html`
+                <article
+                  class="vds-episode-item"
+                  role="button"
+                  tabindex="0"
+                  aria-label=${episode.title || episodeName}
+                  @pointerup=${onEpisodeSelect}
+                  @keydown=${(event: KeyboardEvent) => {
+                    if (event.key === 'Enter' || event.key === ' ') onEpisodeSelect(event);
+                  }}
+                >
+                  <div class="vds-episode-thumb-wrap">
+                    ${episode.thumbnail
+                      ? html`
+                          <img
+                            class="vds-episode-thumb"
+                            src=${episode.thumbnail}
+                            alt=${episode.title || episodeName}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        `
+                      : html`<div class="vds-episode-thumb vds-episode-thumb-placeholder"></div>`}
+                  </div>
+                  <div class="vds-episode-body">
+                    <div class="vds-episode-meta-row">
+                      <span class="vds-episode-label">${seasonEpLabel}</span>
+                      ${runtimeText
+                        ? html`<span class="vds-episode-runtime">${runtimeText}</span>`
+                        : null}
+                    </div>
+                    <h4 class="vds-episode-title" title=${episode.title || ''}>
+                      ${episode.title || '-'}
+                    </h4>
+                    <p class="vds-episode-subtitle" title=${episodeName}>${episodeName}</p>
+                    ${episode.overview
+                      ? html`<p class="vds-episode-desc" title=${episode.overview}>
+                          ${episode.overview}
+                        </p>`
+                      : null}
+                  </div>
+                </article>
+              `;
+            })}
+          </div>
+        </aside>
+      </div>
+    `;
+  });
 }
 
 function DefaultVideoMenus() {

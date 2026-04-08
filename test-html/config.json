@@ -1,0 +1,47 @@
+{
+  "$schema": "https://vidstack.io/player/schema",
+  "player": {
+    "src": "https://files.vidstack.io/sprite-fight/hls/stream.m3u8",
+    "viewType": "video",
+    "streamType": "on-demand",
+    "logLevel": "warn",
+    "crossOrigin": true,
+    "playsInline": true,
+    "title": "Sprite Fight",
+    "poster": "https://files.vidstack.io/sprite-fight/poster.webp",
+    "textTracks": [
+      {
+        "src": "https://files.vidstack.io/sprite-fight/subs/english.vtt",
+        "label": "English",
+        "language": "en-US",
+        "kind": "subtitles",
+        "type": "vtt",
+        "default": true
+      },
+      {
+        "src": "https://files.vidstack.io/sprite-fight/subs/spanish.vtt",
+        "label": "Spanish",
+        "language": "es-ES",
+        "kind": "subtitles",
+        "type": "vtt"
+      },
+      {
+        "src": "https://files.vidstack.io/sprite-fight/chapters.vtt",
+        "language": "en-US",
+        "kind": "chapters",
+        "type": "vtt",
+        "default": true
+      }
+    ]
+  },
+  "layout": {
+    "type": "default",
+    "thumbnails": "https://files.vidstack.io/sprite-fight/thumbnails.vtt",
+    "seekStep": 5,
+    "showEpisodeButton": true,
+    "showCaptionFlags": true
+  },
+  "hls": {},
+  "dash": {},
+  "events": ["can-play"]
+}

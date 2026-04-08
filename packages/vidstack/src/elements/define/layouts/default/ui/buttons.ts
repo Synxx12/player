@@ -255,3 +255,37 @@ export function DefaultDownloadButton() {
       : null;
   });
 }
+
+export function DefaultEpisodeButton({ tooltip }: { tooltip?: TooltipPlacement } = {}) {
+  const $label = 'Episodes',
+    $episodesText = 'Episodes';
+
+  function openEpisodes(e: Event) {
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement | null)?.dispatchEvent(
+      new CustomEvent('vds-episodes-open', { bubbles: true, composed: true }),
+    );
+  }
+
+  const content = html`
+    <button
+      type="button"
+      class="vds-episode-button vds-button"
+      aria-label=${$label}
+      @pointerup=${openEpisodes}
+    >
+      ${IconSlot('menu-episodes')}
+    </button>
+  `;
+
+  if (!tooltip) return content;
+
+  return html`
+    <media-tooltip class="vds-episode-tooltip vds-tooltip">
+      <media-tooltip-trigger> ${content} </media-tooltip-trigger>
+      <media-tooltip-content class="vds-tooltip-content" placement=${tooltip}>
+        <span class="vds-episode-tooltip-text">${$episodesText}</span>
+      </media-tooltip-content>
+    </media-tooltip>
+  `;
+}

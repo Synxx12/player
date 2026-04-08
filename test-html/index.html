@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notflix Player — Vidstack Rombakan</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Vidstack Web Components -->
+    <script type="module" src="../packages/vidstack/dist-npm/cdn/with-layouts/vidstack.js"></script>
+
+    <!-- Vidstack Default Styles -->
+    <link rel="stylesheet" href="../packages/vidstack/dist-npm/player/styles/default/theme.css" />
+    <link
+      rel="stylesheet"
+      href="../packages/vidstack/dist-npm/player/styles/default/layouts/video.css"
+    />
+
+    <!-- Notflix Custom Override -->
+    <link rel="stylesheet" href="custom-player.css" />
+
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #0a0a0a;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #f5f5f5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        opacity: 0.7;
+        margin-bottom: 16px;
+      }
+
+      .player-wrapper {
+        width: 100%;
+        max-width: 1100px;
+        padding: 0 20px;
+        position: relative;
+      }
+
+      media-player[data-view-type='video'] {
+        aspect-ratio: 16 / 9;
+      }
+
+      .vds-video-layout {
+        --video-brand: #e50914;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Notflix Player Test</h1>
+    <pre
+      id="episode-debug"
+      style="
+        width: 100%;
+        max-width: 1100px;
+        padding: 12px 20px;
+        margin: 0 0 12px;
+        background: #111;
+        color: #9ef29e;
+        border: 1px solid #222;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        font-size: 12px;
+        line-height: 1.4;
+      "
+    >
+Klik tombol Episodes untuk test TMDB...</pre
+    >
+
+    <div class="player-wrapper">
+      <media-player
+        id="player"
+        title="Sprite Fight"
+        src="https://files.vidstack.io/sprite-fight/hls/stream.m3u8"
+        crossorigin
+        playsinline
+        poster="https://files.vidstack.io/sprite-fight/poster.webp"
+      >
+        <media-provider></media-provider>
+
+        <!-- Vidstack Default Video Layout (Rombakan) -->
+        <media-video-layout
+          id="layout"
+          thumbnails="https://files.vidstack.io/sprite-fight/thumbnails.vtt"
+        ></media-video-layout>
+      </media-player>
+    </div>
+
+    <script type="module">
+      const player = document.querySelector('#player');
+      const layout = document.querySelector('#layout');
+      const debugEl = document.querySelector('#episode-debug');
+      const TMDB_API_KEY = '9e43f45f94705cc8e1d5a0400d19a7b7';
+      const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w300';
+      // Set to 'movie' to disable episodes UI/data.
+      const CONTENT_TYPE = 'tv';
+      let episodesLoaded = false;
+      let episodesPromise = null;
+
+      function setDebug(message) {
+        const now = new Date().toLocaleTimeString('id-ID');
+        debugEl.textContent = `[${now}] ${message}`;
+      }
+
+      function normalizeRuntime(ep) {
+        if (typeof ep.runtime === 'number' && Number.isFinite(ep.runtime) && ep.runtime > 0)
+          return ep.runtime;
+        if (Array.isArray(ep.episode_run_time) && ep.episode_run_time.length > 0)
+          return ep.episode_run_time[0];
+        return 45;
+      }
+
+      async function fetchJSON(url) {
+        const res = await fetch(url);
+        const text = await res.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {
+          data = { raw: text };
+        }
+        return { ok: res.ok, status: res.status, data };
+      }
+
+      async function loadEpisodesIntoLayout() {
+        if (CONTENT_TYPE === 'movie') {
+          layout.episodesTitle = '';
+          layout.episodes = null;
+          episodesLoaded = true;
+          setDebug('Konten movie: fitur episodes dinonaktifkan.');
+          return true;
+        }
+
+        if (episodesLoaded) return true;
+        if (episodesPromise) return episodesPromise;
+
+        episodesPromise = (async () => {
+          setDebug('Muat episode TMDB: cari "Still Shining" (2026)...');
+          const q = encodeURIComponent('still shining');
+          const searchURL = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${q}&first_air_date_year=2026`;
+          const searchRes = await fetchJSON(searchURL);
+
+          if (!searchRes.ok || !searchRes.data?.results?.length) {
+            setDebug(
+              `Search gagal/kosong. status=${searchRes.status} response=${JSON.stringify(searchRes.data)}`,
+            );
+            console.log('TMDB search response:', searchRes);
+            return false;
+          }
+
+          const show = searchRes.data.results[0];
+          const seasonURL = `https://api.themoviedb.org/3/tv/${show.id}/season/1?api_key=${TMDB_API_KEY}`;
+          const seasonRes = await fetchJSON(seasonURL);
+
+          if (!seasonRes.ok) {
+            setDebug(
+              `Season fetch gagal. status=${seasonRes.status} response=${JSON.stringify(seasonRes.data)}`,
+            );
+            console.log('TMDB season response:', seasonRes);
+            return false;
+          }
+
+          const seasonNumber = seasonRes.data?.season_number ?? 1;
+          const episodes = (seasonRes.data?.episodes ?? []).map((ep) => ({
+            title: ep.name || `Episode ${ep.episode_number}`,
+            episodeTitle: `Episode ${ep.episode_number}`,
+            overview: ep.overview || 'No description available.',
+            thumbnail: ep.still_path ? `${TMDB_IMAGE_BASE}${ep.still_path}` : undefined,
+            runtime: normalizeRuntime(ep),
+            episodeNumber: ep.episode_number,
+            seasonNumber,
+          }));
+
+          layout.episodesTitle = `${show.name} - Season ${seasonNumber}`;
+          layout.episodes = episodes;
+          episodesLoaded = true;
+
+          setDebug(`Episodes siap: ${show.name} S${seasonNumber} (${episodes.length} episode).`);
+          console.log('TMDB mapped episodes for layout:', episodes);
+          return true;
+        })();
+
+        const result = await episodesPromise;
+        episodesPromise = null;
+        return result;
+      }
+
+      // Tambahkan text tracks via Vidstack API (cara yang benar)
+      player.textTracks.add({
+        src: 'https://files.vidstack.io/sprite-fight/subs/english.vtt',
+        label: 'English',
+        language: 'en-US',
+        kind: 'subtitles',
+        type: 'vtt',
+        default: true,
+      });
+
+      player.textTracks.add({
+        src: 'https://files.vidstack.io/sprite-fight/subs/spanish.vtt',
+        label: 'Spanish',
+        language: 'es-ES',
+        kind: 'subtitles',
+        type: 'vtt',
+      });
+
+      player.textTracks.add({
+        src: 'https://files.vidstack.io/sprite-fight/chapters.vtt',
+        language: 'en-US',
+        kind: 'chapters',
+        type: 'vtt',
+        default: true,
+      });
+
+      // Listen for episode button click
+      player.addEventListener('vds-episodes-open', async () => {
+        if (!episodesLoaded) {
+          const ok = await loadEpisodesIntoLayout();
+          if (!ok) {
+            setDebug('Episodes belum bisa dibuka karena fetch TMDB gagal.');
+          }
+        }
+      });
+
+      player.addEventListener('can-play', async () => {
+        await loadEpisodesIntoLayout();
+        console.log('✅ Player ready!');
+      });
+    </script>
+  </body>
+</html>

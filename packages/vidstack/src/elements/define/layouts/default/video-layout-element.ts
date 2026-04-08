@@ -40,6 +40,17 @@ export class MediaVideoLayoutElement
         return value !== 'never' && !!value;
       },
     },
+    episodes: {
+      converter(value) {
+        if (!value) return null;
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : null;
+        } catch {
+          return null;
+        }
+      },
+    },
   };
 
   #media!: MediaContext;

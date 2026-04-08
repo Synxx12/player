@@ -17,14 +17,26 @@ export const defaultLayoutProps: DefaultLayoutProps = {
   noScrubGesture: false,
   playbackRates: { min: 0, max: 2, step: 0.25 },
   audioGains: { min: 0, max: 300, step: 25 },
-  seekStep: 10,
+  seekStep: 5,
   sliderChaptersMinWidth: 325,
   hideQualityBitrate: false,
+  episodes: null,
+  episodesTitle: 'Episodes',
   smallWhen: false,
   thumbnails: null,
   translations: null,
   when: false,
 };
+
+export interface DefaultLayoutEpisode {
+  title: string;
+  episodeTitle?: string;
+  overview?: string;
+  thumbnail?: string;
+  runtime?: number;
+  episodeNumber?: number;
+  seasonNumber?: number;
+}
 
 export interface DefaultLayoutProps {
   /**
@@ -107,6 +119,14 @@ export interface DefaultLayoutProps {
    * @defaultValue false
    */
   hideQualityBitrate: boolean;
+  /**
+   * Episode list shown in the default video layout panel.
+   */
+  episodes: DefaultLayoutEpisode[] | null;
+  /**
+   * Title shown at the top of the episodes panel.
+   */
+  episodesTitle: string;
   /**
    * The playback rate options to be displayed in the settings menu.
    */

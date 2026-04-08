@@ -6,6 +6,10 @@ settings:
 
 importers:
   .:
+    dependencies:
+      flag-icons:
+        specifier: ^7.5.0
+        version: 7.5.0
     devDependencies:
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.3.1
@@ -4012,6 +4016,13 @@ packages:
     dependencies:
       to-regex-range: 5.0.1
     dev: true
+
+  /flag-icons@7.5.0:
+    resolution:
+      {
+        integrity: sha512-kd+MNXviFIg5hijH766tt+3x76ele1AXlo4zDdCxIvqWZhKt4T83bOtxUOOMlTx/EcFdUMH5yvQgYlFh1EqqFg==,
+      }
+    dev: false
 
   /form-data@4.0.5:
     resolution:
